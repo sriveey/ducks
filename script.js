@@ -66,9 +66,9 @@ const state = {
   },
 };
 
+const welcomeScreen = document.getElementById("welcomeScreen");
 const introScreen = document.getElementById("introScreen");
-const enterGameButton = document.getElementById("enterGameButton");
-const startScreen = document.getElementById("startScreen");
+const enterWelcomeButton = document.getElementById("enterWelcomeButton");
 const startGameButton = document.getElementById("startGameButton");
 const completionScreen = document.getElementById("completionScreen");
 const loadingScreen = document.getElementById("loadingScreen");
@@ -92,7 +92,7 @@ const completionMessage = document.getElementById("completionMessage");
 const nextLevelButton = document.getElementById("nextLevelButton");
 const playAgainButton = document.getElementById("playAgainButton");
 
-enterGameButton.addEventListener("click", startGame);
+enterWelcomeButton.addEventListener("click", revealIntroScreen);
 startGameButton.addEventListener("click", startGame);
 hintButton.addEventListener("click", useHint);
 resetButton.addEventListener("click", resetCurrentLevel);
@@ -111,12 +111,17 @@ mobileMediaQuery.addEventListener("change", handleResponsiveModeChange);
 updateHud();
 layoutScene();
 
+function revealIntroScreen() {
+  welcomeScreen.classList.add("hidden");
+  introScreen.classList.remove("hidden");
+}
+
 async function startGame() {
   state.level = 1;
   state.started = true;
   state.levelComplete = false;
+  welcomeScreen.classList.add("hidden");
   introScreen.classList.add("hidden");
-  startScreen.classList.add("hidden");
   completionScreen.classList.add("hidden");
   await buildLevel();
 }
@@ -139,8 +144,8 @@ function backToTitle() {
   nextLevelButton.textContent = "Next Level";
   loadingScreen.classList.add("hidden");
   completionScreen.classList.add("hidden");
-  introScreen.classList.add("hidden");
-  startScreen.classList.remove("hidden");
+  welcomeScreen.classList.add("hidden");
+  introScreen.classList.remove("hidden");
 }
 
 async function buildLevel() {
