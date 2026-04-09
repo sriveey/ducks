@@ -3,6 +3,10 @@ import { loadBackgroundForLevel } from "./background-config.js";
 const duckAsset = "./assets/ducks/kikas-duck.png";
 const clickDragThreshold = 8;
 let resizeRefreshId = 0;
+let lastViewportSnapshot = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
 const RESPONSIVE_CONFIG = {
   mobileBreakpoint: 760,
   desktop: {
@@ -151,6 +155,10 @@ function backToTitle() {
 }
 
 async function buildLevel() {
+  // Level initialization happens here on purpose:
+  // start game, reset level, next level, or responsive mode changes that
+  // intentionally rebuild the active level. Ordinary scrolling should never
+  // call this path or replace the current duck layout.
   const loadToken = state.levelLoadToken + 1;
   state.levelLoadToken = loadToken;
   state.levelComplete = false;
@@ -523,11 +531,23 @@ function resetCamera() {
 }
 
 function handleResize() {
+  const previousViewport = lastViewportSnapshot;
+  const nextViewport = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+  lastViewportSnapshot = nextViewport;
+
   layoutScene();
   clampTransform();
   applyTransform();
 
-  if (state.started && !state.isLoadingLevel && getResponsiveSettings().fitMode === "cover-height") {
+  if (
+    state.started &&
+    !state.isLoadingLevel &&
+    getResponsiveSettings().fitMode === "cover-height" &&
+    shouldRegenerateMobilePlacements(previousViewport, nextViewport)
+  ) {
     window.clearTimeout(resizeRefreshId);
     resizeRefreshId = window.setTimeout(() => {
       regeneratePlacementsForViewport();
@@ -721,6 +741,23 @@ function regeneratePlacementsForViewport() {
   renderDucks();
   resetCamera();
   updateHud();
+}
+
+function shouldRegenerateMobilePlacements(previousViewport, nextViewport) {
+  const widthDelta = Math.abs(nextViewport.width - previousViewport.width);
+  const heightDelta = Math.abs(nextViewport.height - previousViewport.height);
+
+  // Mobile browser chrome often changes viewport height while scrolling,
+  // which fires resize without changing the actual playable level. Ignore
+  // those height-only resizes so the current duck layout and found progress
+  // stay stable during page scroll.
+  if (widthDelta < 8) {
+    return false;
+  }
+
+  // A meaningful width change usually indicates rotation or a genuine layout
+  // change where rebuilding placements for the new pannable slice is helpful.
+  return widthDelta >= 8 || heightDelta >= 120;
 }
 
 function getResponsiveMode() {
