@@ -2,10 +2,30 @@ import { loadBackgroundForLevel } from "./background-config.js";
 
 const duckAsset = "./assets/ducks/kikas-duck.png";
 const clickDragThreshold = 8;
+let resizeRefreshId = 0;
+const RESPONSIVE_CONFIG = {
+  mobileBreakpoint: 760,
+  desktop: {
+    visibleScale: 2 / 3,
+    hitAreaMin: 1.2,
+    hitAreaMax: 1.7,
+    minSpacingFloor: 1.8,
+    fitMode: "contain",
+  },
+  mobile: {
+    visibleScale: 0.2,
+    hitAreaMin: 1.15,
+    hitAreaMax: 1.45,
+    minSpacingFloor: 1.2,
+    fitMode: "cover-height",
+  },
+};
+const mobileMediaQuery = window.matchMedia(`(max-width: ${RESPONSIVE_CONFIG.mobileBreakpoint}px)`);
 
 const state = {
   level: 1,
   totalDucks: 0,
+  totalFound: 0,
   ducks: [],
   hintsRemaining: 0,
   soundEnabled: true,
@@ -13,6 +33,7 @@ const state = {
   levelComplete: false,
   isLoadingLevel: false,
   levelLoadToken: 0,
+  responsiveMode: getResponsiveMode(),
   background: {
     name: "Soft and cozy hidden ducks",
     src: "",
@@ -59,6 +80,7 @@ const effectLayer = document.getElementById("effectLayer");
 const levelLabel = document.getElementById("levelLabel");
 const remainingLabel = document.getElementById("remainingLabel");
 const hintsLabel = document.getElementById("hintsLabel");
+const totalFoundLabel = document.getElementById("totalFoundLabel");
 const statusText = document.getElementById("statusText");
 const sceneLabel = document.getElementById("sceneLabel");
 const progressFill = document.getElementById("progressFill");
@@ -70,7 +92,7 @@ const completionMessage = document.getElementById("completionMessage");
 const nextLevelButton = document.getElementById("nextLevelButton");
 const playAgainButton = document.getElementById("playAgainButton");
 
-enterGameButton.addEventListener("click", revealStartScreen);
+enterGameButton.addEventListener("click", startGame);
 startGameButton.addEventListener("click", startGame);
 hintButton.addEventListener("click", useHint);
 resetButton.addEventListener("click", resetCurrentLevel);
@@ -84,19 +106,16 @@ viewport.addEventListener("pointermove", handlePointerMove);
 viewport.addEventListener("pointerup", handlePointerUp);
 viewport.addEventListener("pointercancel", handlePointerUp);
 window.addEventListener("resize", handleResize);
+mobileMediaQuery.addEventListener("change", handleResponsiveModeChange);
 
 updateHud();
 layoutScene();
-
-function revealStartScreen() {
-  introScreen.classList.add("hidden");
-  startScreen.classList.remove("hidden");
-}
 
 async function startGame() {
   state.level = 1;
   state.started = true;
   state.levelComplete = false;
+  introScreen.classList.add("hidden");
   startScreen.classList.add("hidden");
   completionScreen.classList.add("hidden");
   await buildLevel();
@@ -171,18 +190,25 @@ function nextLevel() {
 
 function getDifficulty(level) {
   const capped = Math.min(level, 12);
+  const responsive = getResponsiveSettings();
   const minDucks = Math.min(12, 6 + Math.floor((capped - 1) / 2));
   const maxDucks = Math.min(15, minDucks + 2);
-  const visibleDuckPct = Math.max(0.42, 0.72 - capped * 0.02);
-  const hitAreaPct = Math.max(1.45, 2.1 - capped * 0.03);
+  const baseVisibleDuckPct = Math.max(0.42, 0.72 - capped * 0.02);
+  const visibleDuckPct = baseVisibleDuckPct * responsive.visibleScale;
+  const hitAreaPct = clamp(
+    Math.max(responsive.hitAreaMin, responsive.hitAreaMax - capped * 0.02),
+    responsive.hitAreaMin,
+    responsive.hitAreaMax
+  );
   const edgePaddingPct = Math.max(1.8, 4.4 - capped * 0.1);
-  const minSpacingPct = Math.max(2.2, visibleDuckPct * 3.8);
+  const minSpacingPct = Math.max(responsive.minSpacingFloor, hitAreaPct * 1.2);
   return { minDucks, maxDucks, visibleDuckPct, hitAreaPct, edgePaddingPct, minSpacingPct };
 }
 
 function createDuckPlacements(level) {
   const { minDucks, maxDucks, visibleDuckPct, hitAreaPct, edgePaddingPct, minSpacingPct } =
     getDifficulty(level);
+  const visibleBounds = getVisibleImageBoundsPct();
   const duckCount = randomInt(minDucks, maxDucks);
   const ducks = [];
   let attempts = 0;
@@ -191,10 +217,19 @@ function createDuckPlacements(level) {
   // same spot on the background image while the scene zooms and pans.
   while (ducks.length < duckCount && attempts < duckCount * 260) {
     attempts += 1;
-    const visualSizePct = clamp(visibleDuckPct + randomFloat(-0.05, 0.06), 0.38, 0.82);
-    const hitSizePct = clamp(hitAreaPct + randomFloat(-0.1, 0.12), 1.35, 2.2);
-    const x = randomFloat(edgePaddingPct, 100 - edgePaddingPct - hitSizePct);
-    const y = randomFloat(edgePaddingPct, 100 - edgePaddingPct - hitSizePct);
+    const visualSizePct = clamp(visibleDuckPct + randomFloat(-0.03, 0.04), 0.06, 0.5);
+    const hitSizePct = clamp(hitAreaPct + randomFloat(-0.08, 0.1), 0.95, 1.9);
+    const minX = Math.max(edgePaddingPct, visibleBounds.left + edgePaddingPct);
+    const maxX = Math.min(100 - edgePaddingPct - hitSizePct, visibleBounds.right - edgePaddingPct - hitSizePct);
+    const minY = Math.max(edgePaddingPct, visibleBounds.top + edgePaddingPct);
+    const maxY = Math.min(100 - edgePaddingPct - hitSizePct, visibleBounds.bottom - edgePaddingPct - hitSizePct);
+
+    if (minX >= maxX || minY >= maxY) {
+      break;
+    }
+
+    const x = randomFloat(minX, maxX);
+    const y = randomFloat(minY, maxY);
     const candidate = {
       id: generateId(),
       x,
@@ -275,6 +310,7 @@ function handleDuckActivate(duckId) {
   }
 
   duck.found = true;
+  state.totalFound += 1;
   const button = duckLayer.querySelector(`[data-duck-id="${duckId}"]`);
   if (button) {
     button.classList.add("found");
@@ -293,6 +329,7 @@ function updateHud() {
   levelLabel.textContent = String(state.level);
   remainingLabel.textContent = String(getRemainingCount());
   hintsLabel.textContent = String(state.hintsRemaining);
+  totalFoundLabel.textContent = String(state.totalFound);
   sceneLabel.textContent = state.started
     ? `${state.background.name}${state.background.source === "fallback" ? " (fallback)" : ""}`
     : "Soft and cozy hidden ducks";
@@ -441,11 +478,19 @@ function playFoundTone() {
 function layoutScene() {
   const rect = viewport.getBoundingClientRect();
   const sceneAspect = state.background.width / state.background.height;
-  let width = rect.width;
-  let height = width / sceneAspect;
-  if (height > rect.height) {
+  let width;
+  let height;
+
+  if (getResponsiveSettings().fitMode === "cover-height") {
     height = rect.height;
     width = height * sceneAspect;
+  } else {
+    width = rect.width;
+    height = width / sceneAspect;
+    if (height > rect.height) {
+      height = rect.height;
+      width = height * sceneAspect;
+    }
   }
 
   state.transform.baseWidth = width;
@@ -471,6 +516,29 @@ function handleResize() {
   layoutScene();
   clampTransform();
   applyTransform();
+
+  if (state.started && !state.isLoadingLevel && getResponsiveSettings().fitMode === "cover-height") {
+    window.clearTimeout(resizeRefreshId);
+    resizeRefreshId = window.setTimeout(() => {
+      regeneratePlacementsForViewport();
+    }, 140);
+  }
+}
+
+function handleResponsiveModeChange() {
+  const nextMode = getResponsiveMode();
+  if (nextMode === state.responsiveMode) {
+    return;
+  }
+
+  state.responsiveMode = nextMode;
+  layoutScene();
+  clampTransform();
+  applyTransform();
+
+  if (state.started && !state.isLoadingLevel) {
+    resetCurrentLevel();
+  }
 }
 
 function applyTransform() {
@@ -624,6 +692,48 @@ function handlePointerUp(event) {
 
 function getRemainingCount() {
   return state.ducks.filter((duck) => !duck.found).length;
+}
+
+function regeneratePlacementsForViewport() {
+  if (!state.started || state.isLoadingLevel) {
+    return;
+  }
+
+  // On mobile the background fills height and crops horizontally, so a resize
+  // or rotation changes which slice of the photo is visible. Rebuild the
+  // current level's placements so ducks stay inside the playable image region.
+  state.levelComplete = false;
+  completionScreen.classList.add("hidden");
+  effectLayer.innerHTML = "";
+  state.hintsRemaining = state.level < 4 ? 3 : 2;
+  state.ducks = createDuckPlacements(state.level);
+  state.totalDucks = state.ducks.length;
+  renderDucks();
+  resetCamera();
+  updateHud();
+}
+
+function getResponsiveMode() {
+  return mobileMediaQuery.matches ? "mobile" : "desktop";
+}
+
+function getResponsiveSettings() {
+  return RESPONSIVE_CONFIG[state.responsiveMode];
+}
+
+function getVisibleImageBoundsPct() {
+  const rect = viewport.getBoundingClientRect();
+  const leftPx = clamp(0 - state.transform.baseLeft, 0, state.transform.baseWidth);
+  const topPx = clamp(0 - state.transform.baseTop, 0, state.transform.baseHeight);
+  const rightPx = clamp(rect.width - state.transform.baseLeft, 0, state.transform.baseWidth);
+  const bottomPx = clamp(rect.height - state.transform.baseTop, 0, state.transform.baseHeight);
+
+  return {
+    left: (leftPx / state.transform.baseWidth) * 100,
+    top: (topPx / state.transform.baseHeight) * 100,
+    right: (rightPx / state.transform.baseWidth) * 100,
+    bottom: (bottomPx / state.transform.baseHeight) * 100,
+  };
 }
 
 function randomInt(min, max) {

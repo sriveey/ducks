@@ -17,17 +17,20 @@
     <div class="app-shell">
       <section id="introScreen" class="intro-screen overlay-card">
         <div class="intro-panel">
-          <div class="overlay-pill">A little surprise</div>
-          <h2>Made especially for Kika&rsquo;s entertainment</h2>
-          <button id="enterGameButton" class="primary-button" type="button">
-            Click to Enter Game
-          </button>
+          <div class="overlay-pill">Tiny ducks ahead!</div>
+          <h2>Can you find all the little ducks?</h2>
+          <p>
+            Sit back, relax, and find as many ducks as you can in all of the cozy scenes I have
+            prepared for you!
+          </p>
+          <button id="enterGameButton" class="primary-button" type="button">Start Game</button>
         </div>
       </section>
 
       <header class="topbar">
-        <div>
-          <h1>Find the Ducks</h1>
+        <div class="brand-lockup">
+          <img class="brand-duck" src="./assets/ducks/kikas-duck.png" alt="" />
+          <h1>Kika&rsquo;s Duck Hunt</h1>
         </div>
         <button id="soundToggle" class="ghost-button" type="button" aria-pressed="true">
           Sound: On
@@ -36,15 +39,15 @@
 
       <main class="game-card">
         <section id="startScreen" class="start-screen overlay-card">
-          <div class="overlay-pill">Tiny ducks ahead</div>
+          <div class="overlay-pill">Tiny ducks ahead!</div>
           <h2>Can you find all the little ducks?</h2>
           <p>
-            Zoom in, pan around, and tap every hidden duck tucked into these cozy scenes.
+            Sit back, relax, and find as many ducks as you can in all of the cozy scenes I have
+            prepared for you!
           </p>
           <div class="mode-row">
             <button id="startGameButton" class="primary-button" type="button">Start Game</button>
           </div>
-          <p class="microcopy">Take your time and enjoy the search.</p>
         </section>
 
         <section class="hud">
@@ -59,6 +62,10 @@
           <div class="hud-chip">
             <span class="hud-label">Hints</span>
             <strong id="hintsLabel">0</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-label">Total Ducks</span>
+            <strong id="totalFoundLabel">0</strong>
           </div>
           <div class="hud-actions">
             <button id="hintButton" class="secondary-button" type="button">Use Hint</button>
