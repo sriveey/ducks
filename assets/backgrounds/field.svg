@@ -1,0 +1,22 @@
+<svg width="1600" height="1000" viewBox="0 0 1600 1000" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="1000" fill="#FFF5E9"/>
+  <rect width="1600" height="520" fill="url(#sky)"/>
+  <path d="M0 583C165 540 307 525 450 530C672 537 855 615 1067 621C1246 626 1410 591 1600 538V1000H0V583Z" fill="#E3DA97"/>
+  <path d="M0 693C160 659 316 656 475 666C679 679 900 749 1106 759C1291 768 1445 739 1600 691V1000H0V693Z" fill="#D1BF68"/>
+  <path d="M97 735C244 705 342 703 461 712C637 726 766 768 911 776C1110 786 1268 750 1489 702" stroke="#F7E9A4" stroke-width="12" stroke-linecap="round"/>
+  <path d="M162 796C285 774 384 774 505 783C678 796 842 837 1048 842C1214 846 1368 822 1501 786" stroke="#F7E1A0" stroke-width="10" stroke-linecap="round"/>
+  <path d="M181 575V877" stroke="#8A613F" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="181" cy="542" r="64" fill="#8CC680"/>
+  <circle cx="1076" cy="559" r="38" fill="#F8BF8D"/>
+  <circle cx="1161" cy="613" r="32" fill="#FFD98E"/>
+  <circle cx="1253" cy="572" r="29" fill="#F6B7D0"/>
+  <path d="M1392 566C1402 628 1425 663 1472 711" stroke="#8A613F" stroke-width="15" stroke-linecap="round"/>
+  <circle cx="1380" cy="547" r="46" fill="#7BB975"/>
+  <circle cx="1465" cy="717" r="31" fill="#6BA45B"/>
+  <defs>
+    <linearGradient id="sky" x1="800" y1="0" x2="800" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E1F2FF"/>
+      <stop offset="1" stop-color="#FFF1DE"/>
+    </linearGradient>
+  </defs>
+</svg>

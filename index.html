@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Find the Ducks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="preload" href="./assets/ducks/kikas-duck.png" as="image" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <section id="introScreen" class="intro-screen overlay-card">
+        <div class="intro-panel">
+          <div class="overlay-pill">A little surprise</div>
+          <h2>Made especially for Kika&rsquo;s entertainment</h2>
+          <button id="enterGameButton" class="primary-button" type="button">
+            Click to Enter Game
+          </button>
+        </div>
+      </section>
+
+      <header class="topbar">
+        <div>
+          <h1>Find the Ducks</h1>
+        </div>
+        <button id="soundToggle" class="ghost-button" type="button" aria-pressed="true">
+          Sound: On
+        </button>
+      </header>
+
+      <main class="game-card">
+        <section id="startScreen" class="start-screen overlay-card">
+          <div class="overlay-pill">Tiny ducks ahead</div>
+          <h2>Can you find all the little ducks?</h2>
+          <p>
+            Zoom in, pan around, and tap every hidden duck tucked into these cozy scenes.
+          </p>
+          <div class="mode-row">
+            <button id="startGameButton" class="primary-button" type="button">Start Game</button>
+          </div>
+          <p class="microcopy">Take your time and enjoy the search.</p>
+        </section>
+
+        <section class="hud">
+          <div class="hud-chip">
+            <span class="hud-label">Level</span>
+            <strong id="levelLabel">1</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-label">Ducks Remaining</span>
+            <strong id="remainingLabel">0</strong>
+          </div>
+          <div class="hud-chip">
+            <span class="hud-label">Hints</span>
+            <strong id="hintsLabel">0</strong>
+          </div>
+          <div class="hud-actions">
+            <button id="hintButton" class="secondary-button" type="button">Use Hint</button>
+            <button id="resetButton" class="ghost-button" type="button">Reset Level</button>
+          </div>
+        </section>
+
+        <section class="progress-panel">
+          <div class="progress-copy">
+            <span id="statusText">Press start when you are ready to hunt for ducks.</span>
+            <span id="sceneLabel">Soft and cozy hidden ducks</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+        </section>
+
+        <section id="viewport" class="viewport" aria-label="Game scene">
+          <div id="scene" class="scene">
+            <img id="backgroundImage" class="scene-image" alt="Scenic level background" />
+            <div class="scene-overlay" aria-hidden="true"></div>
+            <div id="duckLayer" class="duck-layer" aria-live="polite"></div>
+            <div id="effectLayer" class="effect-layer" aria-hidden="true"></div>
+          </div>
+
+          <section id="loadingScreen" class="loading-screen overlay-card hidden" aria-live="polite">
+            <div class="overlay-pill">Loading scene</div>
+            <h2>Finding a pretty place for the next ducks...</h2>
+            <p>The next background is loading before the ducks are hidden.</p>
+          </section>
+
+          <section id="completionScreen" class="completion-screen overlay-card hidden">
+            <div class="overlay-pill">Level cleared</div>
+            <h2 id="completionTitle">You found them all!</h2>
+            <p id="completionMessage">Every tiny duck has been spotted.</p>
+            <div class="mode-row">
+              <button id="nextLevelButton" class="primary-button" type="button">Next Level</button>
+              <button id="playAgainButton" class="secondary-button" type="button">
+                Back to Title
+              </button>
+            </div>
+          </section>
+        </section>
+
+        <section class="tips-panel">
+          <p><strong>Desktop:</strong> Mouse wheel to zoom, drag to pan when zoomed in.</p>
+          <p><strong>Mobile:</strong> Pinch to zoom, drag to pan, tap ducks to find them.</p>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./script.js"></script>
+  </body>
+  </html>
