@@ -11,13 +11,15 @@ const RESPONSIVE_CONFIG = {
     hitAreaMax: 1.7,
     minSpacingFloor: 1.8,
     fitMode: "contain",
+    spawnUsesFullScrollableWidth: false,
   },
   mobile: {
-    visibleScale: 0.2,
-    hitAreaMin: 1.15,
-    hitAreaMax: 1.45,
+    visibleScale: 0.1,
+    hitAreaMin: 1.2,
+    hitAreaMax: 1.55,
     minSpacingFloor: 1.2,
     fitMode: "cover-height",
+    spawnUsesFullScrollableWidth: true,
   },
 };
 const mobileMediaQuery = window.matchMedia(`(max-width: ${RESPONSIVE_CONFIG.mobileBreakpoint}px)`);
@@ -211,12 +213,14 @@ function getDifficulty(level) {
 }
 
 function createDuckPlacements(level) {
+  const responsive = getResponsiveSettings();
   const { minDucks, maxDucks, visibleDuckPct, hitAreaPct, edgePaddingPct, minSpacingPct } =
     getDifficulty(level);
-  const visibleBounds = getVisibleImageBoundsPct();
+  const placementBounds = getPlacementBoundsPct(responsive);
   const duckCount = randomInt(minDucks, maxDucks);
   const ducks = [];
   let attempts = 0;
+  const spawnZones = getSpawnZones(duckCount, placementBounds, responsive);
 
   // Placement uses percentage coordinates so every duck stays locked to the
   // same spot on the background image while the scene zooms and pans.
@@ -224,10 +228,11 @@ function createDuckPlacements(level) {
     attempts += 1;
     const visualSizePct = clamp(visibleDuckPct + randomFloat(-0.03, 0.04), 0.06, 0.5);
     const hitSizePct = clamp(hitAreaPct + randomFloat(-0.08, 0.1), 0.95, 1.9);
-    const minX = Math.max(edgePaddingPct, visibleBounds.left + edgePaddingPct);
-    const maxX = Math.min(100 - edgePaddingPct - hitSizePct, visibleBounds.right - edgePaddingPct - hitSizePct);
-    const minY = Math.max(edgePaddingPct, visibleBounds.top + edgePaddingPct);
-    const maxY = Math.min(100 - edgePaddingPct - hitSizePct, visibleBounds.bottom - edgePaddingPct - hitSizePct);
+    const zone = spawnZones[ducks.length % spawnZones.length];
+    const minX = Math.max(edgePaddingPct, zone.left + edgePaddingPct);
+    const maxX = Math.min(100 - edgePaddingPct - hitSizePct, zone.right - edgePaddingPct - hitSizePct);
+    const minY = Math.max(edgePaddingPct, placementBounds.top + edgePaddingPct);
+    const maxY = Math.min(100 - edgePaddingPct - hitSizePct, placementBounds.bottom - edgePaddingPct - hitSizePct);
 
     if (minX >= maxX || minY >= maxY) {
       break;
@@ -726,6 +731,42 @@ function getResponsiveSettings() {
   return RESPONSIVE_CONFIG[state.responsiveMode];
 }
 
+function getPlacementBoundsPct(responsive) {
+  if (responsive.spawnUsesFullScrollableWidth) {
+    return {
+      left: 0,
+      top: 0,
+      right: 100,
+      bottom: 100,
+    };
+  }
+  return getVisibleImageBoundsPct();
+}
+
+function getSpawnZones(duckCount, placementBounds, responsive) {
+  if (!responsive.spawnUsesFullScrollableWidth) {
+    return [placementBounds];
+  }
+
+  // On mobile, divide the full pannable image width into horizontal zones so
+  // placements naturally spread left, center, and right instead of clustering
+  // in the initially visible middle slice.
+  const zoneCount = Math.min(Math.max(3, Math.ceil(duckCount / 3)), 5);
+  const zoneWidth = (placementBounds.right - placementBounds.left) / zoneCount;
+  const zones = [];
+
+  for (let index = 0; index < zoneCount; index += 1) {
+    zones.push({
+      left: placementBounds.left + zoneWidth * index,
+      right: placementBounds.left + zoneWidth * (index + 1),
+      top: placementBounds.top,
+      bottom: placementBounds.bottom,
+    });
+  }
+
+  return shuffleArray(zones);
+}
+
 function getVisibleImageBoundsPct() {
   const rect = viewport.getBoundingClientRect();
   const leftPx = clamp(0 - state.transform.baseLeft, 0, state.transform.baseWidth);
@@ -766,4 +807,13 @@ function generateId() {
     const value = char === "x" ? random : (random & 0x3) | 0x8;
     return value.toString(16);
   });
+}
+
+function shuffleArray(items) {
+  const copy = [...items];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+  return copy;
 }
